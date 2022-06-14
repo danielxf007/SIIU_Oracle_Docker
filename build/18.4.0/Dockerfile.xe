@@ -20,7 +20,7 @@
 # ---------------
 FROM oraclelinux:7-slim
 
-# Modified by Grupo Colav to support Scienti DBs
+# Support for SIIU DB
 ENV ORACLE_CHARACTERSET WE8MSWIN1252
 
 # Labels
