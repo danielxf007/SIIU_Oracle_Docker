@@ -1,19 +1,12 @@
 #!/bin/bash
 
-createUser(){
+#(name) -> Creates Table Space
+createTablespace(){
+name=$1
+extension="_01.dbf"
+dbf_file="$name$extension"
 sqlplus -s / as sysdba << EOF
-alter session set "_ORACLE_SCRIPT"=true;  
-create user $1
-identified by $2
-default tablespace BUPP
-temporary tablespace temp 
-profile default;
-exit;
-EOF
-}
-
-sqlplus -s / as sysdba << EOF
-create tablespace BUPP
+create tablespace $name
 default storage (
 initial     40960
 next        40960
@@ -23,9 +16,39 @@ pctincrease 0
 )
 permanent
 datafile
-'bupp_01.dbf' size 50m
+'$dbf_file' size 50m
 autoextend on next 50m maxsize 14000m;
+exit;
+EOF
+}
 
+#(user, password, tablespace) -> Creates User
+createUser(){
+new_user=$1
+password=$2
+tablespace=$3
+sqlplus -s / as sysdba << EOF
+alter session set "_ORACLE_SCRIPT"=true;  
+create user $new_user
+identified by $password
+default tablespace $tablespace
+temporary tablespace temp 
+profile default;
+grant connect to $new_user; 
+grant resource to $new_user; 
+grant create any view to $new_user; 
+grant debug connect session to $new_user; 
+grant unlimited tablespace to $new_user;
+grant create session, create table, create procedure, exp_full_database, imp_full_database to $new_user;
+GRANT IMP_FULL_DATABASE to $new_user;
+ALTER USER $new_user DEFAULT ROLE ALL;
+alter user $new_user identified by $new_user quota unlimited on indx; 
+grant read, write on directory siiu_pump_dir to $new_user;
+exit;
+EOF
+}
+
+sqlplus -s / as sysdba << EOF
 create tablespace indx
 default storage (
 initial     40960
@@ -41,31 +64,15 @@ autoextend on next 50m maxsize 4000m
 ;
 create directory siiu_pump_dir as '/tmp/dump';
 
-alter session set "_ORACLE_SCRIPT"=true;  
-create user $SIIU_USER 
- identified by $ORACLE_PWD
- default tablespace BUPP
- temporary tablespace temp 
- profile default; 
-grant connect to $SIIU_USER; 
-grant resource to $SIIU_USER; 
-grant create any view to $SIIU_USER; 
-grant debug connect session to $SIIU_USER; 
-grant unlimited tablespace to $SIIU_USER;
-grant create session, create table, create procedure, exp_full_database, imp_full_database to $SIIU_USER;
-GRANT IMP_FULL_DATABASE to $SIIU_USER;
-ALTER USER $SIIU_USER DEFAULT ROLE ALL;
-alter user $SIIU_USER identified by $SIIU_USER quota unlimited on indx; 
-grant read, write on directory siiu_pump_dir to $SIIU_USER;
-
 exit;
 EOF
 
 IFS=', ' read -r -a array <<< "$SIIU_USERS"
 for user in "${array[@]}"
 do
-    echo "Creating $user"
-    createUser $user $ORACLE_PWD
+    echo "Creating Table Space: $user and User: $user"
+    createTablespace $user
+    createUser $user $ORACLE_PWD $user
 done
 
 IFS=', ' read -r -a array <<< "$DUMP_FILES"
