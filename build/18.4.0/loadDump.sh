@@ -67,23 +67,26 @@ create directory siiu_pump_dir as '/tmp/dump';
 exit;
 EOF
 
+IFS=', ' read -r -a array <<< "$SIIU_TABLESPACES"
+for tablespace in "${array[@]}"
+do
+    echo "Creating Table Space: $tablespace"
+    createTablespace $tablespace
+done
+
 IFS=', ' read -r -a array <<< "$SIIU_USERS"
 for user in "${array[@]}"
 do
-    echo "Creating Table Space: $user and User: $user"
-    createTablespace $user
-    createUser $user $ORACLE_PWD $user
+    echo "Creating User: $user"
+    createUser $user $ORACLE_PWD "BUPP"
 done
 
 IFS=', ' read -r -a array <<< "$DUMP_FILES"
 for dump_file in "${array[@]}"
 do
     echo "Loading dump file $dump_file"
-    impdp system/$ORACLE_PWD@localhost:1521 exclude=table:\"IN \'SIIU_ARCHIVO_ADJUNTO\'\" \
+    impdp system/$ORACLE_PWD@localhost:1521 exclude=table:\"IN \'SIIU_ARCHIVO_ADJUNTO\'\"  \
     directory=siiu_pump_dir dumpfile=$dump_file data_options=skip_constraint_errors version=11.2.0.4.0
-    #query='BUPP.SIIU_PROYECTO:"where rownum <= (select count(*)/2 from BUPP.SIIU_PROYECTO)"' \
-    #logfile=$DUMP_LOG_FILE 
-    # tables=BUPP.SIIU_PROYECTO,BUPP.SIIU_CONVOCATORIA,\ BUPP.SIIU_ACTUALIZACION_PROYECTO,BUPP.SIIU_TEXTO_DESCRIPTIVO \
 done
 
 
