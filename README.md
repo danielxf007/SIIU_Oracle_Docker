@@ -18,6 +18,6 @@ You can deploy your own instance of oracle, import the database from the dump pr
 ## Some errors
 
 - `[ORA-12954]`: This error gets triggered when the DB is greater than 12GB, you can add to the import comamnd:
-`tables="TABLE_SPACE_NAME.TABLE_NAME","TABLE_SPACE_NAME.TABLE_NAME"`, etc this includes those tables only or
+`tables="TABLE_SPACE_NAME.TABLE_NAME","TABLE_SPACE_NAME.TABLE_NAME"`, this includes those tables only or
 you can exclude tables that occupy too much space with `exclude=table:\"IN \'TABLE_NAME\'\"`,
 if you use either, then you must also include `data_options=skip_constraint_errors`
